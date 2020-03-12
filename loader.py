@@ -56,24 +56,22 @@ class PascalVOC(data.Dataset):
         img = np.array(pil_img)
         lbl = np.array(pil_lbl)
         lbl[lbl==255] = 0
-
+ 
         # pil_img = 0
         # pil_lbl = 0
 
-        img = np.swapaxes(img, 0, 2)
-        img = np.swapaxes(img, 1, 2)
+        # img = np.swapaxes(img, 0, 2)
+        # img = np.swapaxes(img, 1, 2)
 
         obj_ids = np.unique(lbl)
         # first id is the background, so remove it
         obj_ids = obj_ids[1:]
-        print(obj_ids[:, None, None])
-        print(pil_lbl)
+    
 
 
         # split the color-encoded mask into a set
         # of binary masks
         masks = lbl== obj_ids[:, None, None]
-        print(masks)
 
         # get bounding box coordinates for each mask
         num_objs = len(obj_ids)
@@ -86,7 +84,6 @@ class PascalVOC(data.Dataset):
             ymin = np.min(pos[0])
             ymax = np.max(pos[0])
             boxes.append([xmin, ymin, xmax, ymax])
-        print(boxes)
 
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         # there is only one class
@@ -106,10 +103,10 @@ class PascalVOC(data.Dataset):
         target["area"] = area
         target["iscrowd"] = iscrowd
 
-        if self.img_transform is not None:
-            img, target = self.img_transform(img), self.label_transform(target)
+        if self.label_transform is not None:
+            img, target = img, self.label_transform(target)
 
-        return torch.from_numpy(img), target
+        return img, target
 
 
 def visualize(path, predicted_label):
@@ -125,4 +122,3 @@ def visualize(path, predicted_label):
 
     # imsave(path, label_viz)
     imageio.imwrite(path, label_viz)
-

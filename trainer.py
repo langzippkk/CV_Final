@@ -11,7 +11,6 @@ if USE_GPU and torch.cuda.is_available():
 else:
     device = torch.device('cpu')
 
-print(device)
 
 
 import torch
@@ -26,12 +25,19 @@ import torchvision.transforms as T
 
 from loader import *
 
+
+def collate_fn(batch):
+    return tuple(zip(*batch))
+
+
 dataset_train = PascalVOC(split = 'train')
+
+
 dataset_val = PascalVOC(split = 'val')
 
 NUM_TRAIN = 50
 loader_train = DataLoader(dataset_train, batch_size=2,
-                          sampler=sampler.SubsetRandomSampler(range(NUM_TRAIN)))
+                          sampler=sampler.SubsetRandomSampler(range(NUM_TRAIN)), collate_fn=collate_fn)
 
 
 import torchvision
@@ -84,30 +90,34 @@ lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
                                                gamma=0.1)
 
 
+
+
+
+
 def train(n_epoch, model, train_loader, optimizer, epoch, freq):
     count = 0
 
     model.train()
 
-    for batch_idx, (images, labels) in enumerate(train_loader):
-
-        """
-        TODO: Implement training loop.
-        """
+    for images, labels in train_loader:
+        
         model.train()
         optimizer.zero_grad()
-        print("before")
-        outputs = model(images.float(), labels)
-        print("after")
+        print("---------------------before----------------------")
+        target = [{k: v.to(device) for k, v in t.items()} for t in labels]
+        img = torch.Tensor(np.array(images).reshape(2, 3, 224, 224)).to(device)
+        outputs = model(img, target)
+        print("---------------------after------------------------")
+
 
         loss = cross_entropy2d(outputs, labels, freq)
         loss.backward()
         optimizer.step()
         # raise NotImplementedError
 
-        if batch_idx % 20 == 0:
-            count = count + 1
-            print("Epoch [%d/%d] Loss: %.4f" % (epoch+1, n_epoch, loss.data))
+        # if batch_idx % 20 == 0:
+        #     count = count + 1
+        #     print("Epoch [%d/%d] Loss: %.4f" % (epoch+1, n_epoch, loss.data))
 
         # if batch_idx % 20 == 0:
         #     """
